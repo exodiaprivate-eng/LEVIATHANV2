@@ -95,4 +95,90 @@ Respond ONLY with JSON:
             logger.error(f"Failed to store analysis: {e}")
 
     def apply_learned_adjustments(self, config: dict) -> dict:
-        return config
+        """Read the most recent self-analysis and apply proposed adjustments to config."""
+        import sqlite3 as _sqlite3
+
+        adjusted = dict(config)
+        try:
+            conn = _sqlite3.connect(self.db.db_path)
+            row = conn.execute('''
+                SELECT proposed_adjustments, confidence_adjustment, llm_reasoning
+                FROM self_analysis
+                WHERE adjustments_applied = FALSE
+                ORDER BY analysis_date DESC LIMIT 1
+            ''').fetchone()
+            conn.close()
+
+            if not row:
+                return adjusted
+
+            proposed_raw = row[0]
+            confidence_adj = row[1] if row[1] else 0
+
+            try:
+                proposed = json.loads(proposed_raw) if isinstance(proposed_raw, str) else proposed_raw
+            except (json.JSONDecodeError, TypeError):
+                proposed = []
+
+            if not isinstance(proposed, list):
+                proposed = [proposed] if proposed else []
+
+            # Apply adjustments within safe bounds
+            for adj in proposed:
+                adj_lower = str(adj).lower() if adj else ''
+
+                if 'confidence threshold' in adj_lower or 'increase confidence' in adj_lower:
+                    current = adjusted.get('min_signal_confidence', 0.6)
+                    adjusted['min_signal_confidence'] = min(current + 0.05, 0.90)
+                    logger.info("Adjustment: min_signal_confidence -> %.2f", adjusted['min_signal_confidence'])
+
+                elif 'decrease confidence' in adj_lower or 'lower threshold' in adj_lower:
+                    current = adjusted.get('min_signal_confidence', 0.6)
+                    adjusted['min_signal_confidence'] = max(current - 0.05, 0.40)
+                    logger.info("Adjustment: min_signal_confidence -> %.2f", adjusted['min_signal_confidence'])
+
+                elif 'reduce position' in adj_lower or 'smaller position' in adj_lower:
+                    current = adjusted.get('max_position_pct', 0.30)
+                    adjusted['max_position_pct'] = max(current - 0.05, 0.05)
+                    logger.info("Adjustment: max_position_pct -> %.2f", adjusted['max_position_pct'])
+
+                elif 'increase position' in adj_lower or 'larger position' in adj_lower:
+                    current = adjusted.get('max_position_pct', 0.30)
+                    adjusted['max_position_pct'] = min(current + 0.05, 0.30)
+                    logger.info("Adjustment: max_position_pct -> %.2f", adjusted['max_position_pct'])
+
+                elif 'tighter stop' in adj_lower:
+                    current = adjusted.get('default_stop_loss_pct', 0.03)
+                    adjusted['default_stop_loss_pct'] = max(current - 0.005, 0.01)
+                    logger.info("Adjustment: default_stop_loss_pct -> %.3f", adjusted['default_stop_loss_pct'])
+
+                elif 'wider stop' in adj_lower or 'looser stop' in adj_lower:
+                    current = adjusted.get('default_stop_loss_pct', 0.03)
+                    adjusted['default_stop_loss_pct'] = min(current + 0.005, 0.08)
+                    logger.info("Adjustment: default_stop_loss_pct -> %.3f", adjusted['default_stop_loss_pct'])
+
+            # Apply confidence_adjustment from analysis (integer offset)
+            if isinstance(confidence_adj, (int, float)) and confidence_adj != 0:
+                current = adjusted.get('min_signal_confidence', 0.6)
+                delta = confidence_adj * 0.02  # Each unit = 2% shift
+                adjusted['min_signal_confidence'] = max(0.40, min(0.90, current + delta))
+
+            # Mark this analysis as applied
+            try:
+                conn = _sqlite3.connect(self.db.db_path)
+                conn.execute('''
+                    UPDATE self_analysis SET adjustments_applied = TRUE
+                    WHERE adjustments_applied = FALSE
+                    AND id = (SELECT id FROM self_analysis WHERE adjustments_applied = FALSE
+                              ORDER BY analysis_date DESC LIMIT 1)
+                ''')
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                logger.error(f"Failed to mark adjustment applied: {e}")
+
+            logger.info("Applied learned adjustments from self-analysis")
+        except Exception as e:
+            logger.error(f"apply_learned_adjustments failed: {e}")
+
+        return adjusted

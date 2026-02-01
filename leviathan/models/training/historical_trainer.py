@@ -246,9 +246,117 @@ class HistoricalTrainer:
             'total_trades': 0,
         }
 
-        # Train and get results with walk-forward
+        # Collect all data first
+        all_X, all_y, all_prices = [], [], []
+        for symbol in symbols:
+            try:
+                df = self._fetch_data(symbol, start_date, end_date)
+                if df is None or len(df) < 100:
+                    continue
+                features_df = self._generate_features(df)
+                labels = self._generate_training_labels(df)
+                if features_df is None or labels is None:
+                    continue
+
+                min_len = min(len(features_df), len(labels), len(df))
+                X = features_df.values[:min_len]
+                y = labels[:min_len]
+                prices = df['close'].values[:min_len]
+
+                valid = ~(np.isnan(X).any(axis=1) | np.isnan(y))
+                all_X.append(X[valid])
+                all_y.append(y[valid].astype(int))
+                all_prices.append(prices[valid])
+            except Exception as e:
+                logger.error("Backtest data prep failed for %s: %s", symbol, e)
+
+        if not all_X:
+            results['error'] = 'No data'
+            results['status'] = 'failed'
+            return results
+
+        X = np.vstack(all_X)
+        y = np.concatenate(all_y)
+        prices = np.concatenate(all_prices)
+
+        # Walk-forward: train on first portion, test on remainder
+        splits = self._walk_forward_split(X, y, n_splits=5)
+        all_returns = []
+        total_wins = 0
+        total_trades = 0
+
+        for fold_idx, (train_idx, val_idx) in enumerate(splits):
+            X_train, y_train = X[train_idx], y[train_idx]
+            X_val, y_val = X[val_idx], y[val_idx]
+            val_prices = prices[val_idx]
+
+            # Train models on this fold
+            if self.trainer:
+                try:
+                    self.trainer.train_all(X_train, y_train, X_val, y_val)
+                except Exception as e:
+                    logger.error("Fold %d training failed: %s", fold_idx, e)
+                    continue
+
+            # Generate predictions on validation set
+            preds = np.ones(len(y_val))  # default HOLD
+            if self.trainer:
+                for name, model in [('lstm', self.trainer.lstm),
+                                     ('lgbm', self.trainer.lgbm),
+                                     ('nbeats', self.trainer.nbeats)]:
+                    if model is None:
+                        continue
+                    try:
+                        if name == 'lstm':
+                            X_3d = X_val.reshape(X_val.shape[0], 1, X_val.shape[1])
+                            p, _ = model.predict(X_3d)
+                        else:
+                            p = model.predict(X_val)
+                            if isinstance(p, tuple):
+                                p = p[0]
+                        preds = np.asarray(p).flatten()
+                        break  # Use first working model
+                    except Exception:
+                        continue
+
+            # Simulate trades: BUY=2, SELL=0, HOLD=1
+            fold_returns = []
+            for i in range(len(preds) - 1):
+                if preds[i] == 2:  # BUY signal
+                    ret = (val_prices[i + 1] - val_prices[i]) / val_prices[i]
+                    fold_returns.append(ret)
+                    total_trades += 1
+                    if ret > 0:
+                        total_wins += 1
+                elif preds[i] == 0:  # SELL signal
+                    ret = (val_prices[i] - val_prices[i + 1]) / val_prices[i]
+                    fold_returns.append(ret)
+                    total_trades += 1
+                    if ret > 0:
+                        total_wins += 1
+
+            all_returns.extend(fold_returns)
+
+        # Compute metrics
+        if all_returns:
+            returns_arr = np.array(all_returns)
+            results['total_return'] = float(np.sum(returns_arr))
+            mean_r = np.mean(returns_arr)
+            std_r = np.std(returns_arr, ddof=1) if len(returns_arr) > 1 else 1.0
+            results['sharpe_ratio'] = float((mean_r / std_r) * np.sqrt(252)) if std_r > 0 else 0.0
+
+            # Max drawdown from cumulative returns
+            cum = np.cumsum(returns_arr)
+            peak = np.maximum.accumulate(cum)
+            dd = cum - peak
+            results['max_drawdown'] = float(np.min(dd)) if len(dd) > 0 else 0.0
+
+        results['total_trades'] = total_trades
+        results['win_rate'] = total_wins / total_trades if total_trades > 0 else 0.0
+        results['status'] = 'complete'
+
+        # Also include training results
         train_results = self.train_from_history(symbols, start_date, end_date)
         results['training'] = train_results
-        results['status'] = 'complete'
 
         return results

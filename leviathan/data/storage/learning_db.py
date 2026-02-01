@@ -215,7 +215,62 @@ class LearningDatabase:
         return rows
 
     def get_best_entry_conditions(self) -> dict:
-        return {}
+        """Analyze winning trades to find optimal entry indicator values."""
+        conn = self._conn()
+        try:
+            # Get average indicator values for profitable trades (last 90 days)
+            rows = conn.execute('''
+                SELECT
+                    AVG(rsi_at_entry) as avg_rsi,
+                    AVG(macd_at_entry) as avg_macd,
+                    AVG(bb_position_at_entry) as avg_bb,
+                    AVG(volume_ratio_at_entry) as avg_vol_ratio,
+                    AVG(signal_confidence) as avg_confidence,
+                    AVG(technical_score) as avg_tech_score,
+                    AVG(sentiment_score) as avg_sentiment,
+                    COUNT(*) as sample_size,
+                    AVG(profit_loss_pct) as avg_return
+                FROM trade_outcomes
+                WHERE profit_loss > 0
+                AND entry_date > datetime('now', '-90 days')
+            ''').fetchone()
+
+            if not rows or rows[7] == 0:  # sample_size
+                return {}
+
+            result = {
+                'optimal_rsi_entry': rows[0],
+                'optimal_macd_entry': rows[1],
+                'optimal_bb_position': rows[2],
+                'optimal_volume_ratio': rows[3],
+                'optimal_confidence': rows[4],
+                'optimal_technical_score': rows[5],
+                'optimal_sentiment_score': rows[6],
+                'sample_size': rows[7],
+                'avg_winner_return': rows[8],
+            }
+
+            # Also get best entry conditions from best_practices table
+            bp_rows = conn.execute('''
+                SELECT condition_key, optimal_value, confidence_score, sample_size
+                FROM best_practices
+                WHERE category = 'position_sizing'
+                ORDER BY avg_outcome DESC LIMIT 10
+            ''').fetchall()
+
+            if bp_rows:
+                result['best_practices'] = [
+                    {'condition': json.loads(r[0]) if r[0] else {},
+                     'optimal_value': r[1], 'confidence': r[2], 'samples': r[3]}
+                    for r in bp_rows
+                ]
+
+            return {k: v for k, v in result.items() if v is not None}
+        except Exception as e:
+            logger.error(f"get_best_entry_conditions failed: {e}")
+            return {}
+        finally:
+            conn.close()
 
     def get_optimal_hold_duration(self) -> float:
         conn = self._conn()
@@ -230,7 +285,48 @@ class LearningDatabase:
         return row[0] if row else 'rsi_mean_reversion'
 
     def analyze_by_market_condition(self) -> dict:
-        return {}
+        """Break down trade performance by market condition (bullish/bearish/sideways)."""
+        conn = self._conn()
+        try:
+            rows = conn.execute('''
+                SELECT
+                    market_trend,
+                    COUNT(*) as total_trades,
+                    SUM(CASE WHEN profit_loss > 0 THEN 1 ELSE 0 END) as wins,
+                    AVG(profit_loss_pct) as avg_return,
+                    SUM(profit_loss) as total_pnl,
+                    AVG(signal_confidence) as avg_confidence,
+                    AVG(hold_duration_hours) as avg_hold_hours
+                FROM trade_outcomes
+                WHERE market_trend IS NOT NULL
+                GROUP BY market_trend
+                ORDER BY total_pnl DESC
+            ''').fetchall()
+
+            if not rows:
+                return {}
+
+            result = {}
+            for row in rows:
+                trend = row[0] or 'unknown'
+                total = row[1]
+                wins = row[2]
+                result[trend] = {
+                    'total_trades': total,
+                    'wins': wins,
+                    'losses': total - wins,
+                    'win_rate': wins / total if total > 0 else 0,
+                    'avg_return_pct': row[3],
+                    'total_pnl': row[4],
+                    'avg_confidence': row[5],
+                    'avg_hold_hours': row[6],
+                }
+            return result
+        except Exception as e:
+            logger.error(f"analyze_by_market_condition failed: {e}")
+            return {}
+        finally:
+            conn.close()
 
     def record_position_outcome(self, **kwargs):
         conn = self._conn()

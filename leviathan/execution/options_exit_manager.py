@@ -17,8 +17,32 @@ class OptionsExitManager:
         self.theta_threshold = theta_threshold
 
     def check_all_options(self) -> list:
+        """Fetch all options positions and evaluate each for exit signals."""
         exits = []
-        # Options positions would be fetched here
+        try:
+            positions = self.alpaca.get_positions()
+        except Exception as e:
+            logger.error(f"Failed to get positions: {e}")
+            return []
+
+        for pos in positions:
+            symbol = getattr(pos, 'symbol', '')
+            # Options symbols are typically longer and contain expiry/strike info
+            # Alpaca options symbols follow OCC format: e.g. AAPL230120C00150000
+            asset_class = getattr(pos, 'asset_class', '')
+            if asset_class == 'us_option' or (len(symbol) > 10 and not '/' in symbol):
+                pos_dict = {
+                    'symbol': symbol,
+                    'market_value': getattr(pos, 'market_value', 0),
+                    'cost_basis': getattr(pos, 'cost_basis', 0),
+                    'expiration_date': getattr(pos, 'expiration_date', None),
+                    'original_dte': getattr(pos, 'original_dte', 45),
+                }
+                result = self.evaluate_position(pos_dict)
+                if result.get('should_exit'):
+                    exits.append(result)
+
+        logger.info(f"Options exit check: {len(exits)} exit signals from positions")
         return exits
 
     def evaluate_position(self, position: dict) -> dict:

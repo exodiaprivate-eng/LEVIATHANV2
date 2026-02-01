@@ -184,7 +184,57 @@ class ModelTrainer:
         return improvements
 
     def deploy_models(self, models: dict):
+        """Save trained models to the deployment directory and log to learning DB."""
+        import shutil
+        from datetime import datetime
+
         logger.info(f"Deploying models: {list(models.keys())}")
+        deployed = {}
+
+        for name, model in models.items():
+            try:
+                # Determine source path (model may be an object or a path string)
+                if isinstance(model, str):
+                    src = Path(model)
+                elif hasattr(model, 'save'):
+                    # Save to a timestamped file first, then copy to 'latest'
+                    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    ext = '.pt' if name in ('lstm', 'nbeats') else '.pkl'
+                    versioned = MODELS_DIR / f'{name}_{ts}{ext}'
+                    model.save(str(versioned))
+                    src = versioned
+                else:
+                    logger.warning(f"Cannot deploy {name}: unknown model type")
+                    continue
+
+                # Copy to the canonical 'latest' path
+                ext = src.suffix
+                latest = MODELS_DIR / f'{name}_latest{ext}'
+                if src != latest:
+                    shutil.copy2(str(src), str(latest))
+
+                deployed[name] = str(latest)
+                logger.info(f"Deployed {name} -> {latest}")
+
+            except Exception as e:
+                logger.error(f"Failed to deploy {name}: {e}")
+                deployed[name] = f'failed: {e}'
+
+        # Record deployment in learning DB
+        if self.db and hasattr(self.db, 'mark_session_deployed'):
+            try:
+                # Get latest training session and mark it deployed
+                conn = self.db._conn()
+                row = conn.execute(
+                    "SELECT id FROM training_sessions ORDER BY id DESC LIMIT 1"
+                ).fetchone()
+                conn.close()
+                if row:
+                    self.db.mark_session_deployed(row[0])
+            except Exception as e:
+                logger.error(f"Failed to mark deployment in DB: {e}")
+
+        return deployed
 
     def online_update(self, recent_trades: list):
         """Incremental model update with new data points.
