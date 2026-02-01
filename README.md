@@ -7,7 +7,7 @@
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 [![Alpaca API](https://img.shields.io/badge/Broker-Alpaca-yellow.svg)](https://alpaca.markets/)
 [![PyTorch](https://img.shields.io/badge/ML-PyTorch-red.svg)](https://pytorch.org/)
-[![License](https://img.shields.io/badge/License-Private-gray.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 <br/>
 
