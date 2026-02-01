@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for f in \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\risk\\\\pdt_tracker.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\risk\\\\risk_manager.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\risk\\\\circuit_breaker.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\risk\\\\drawdown_scaler.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\risk\\\\portfolio.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\risk\\\\portfolio_analyzer.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\execution\\\\fill_handler.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\execution\\\\order_manager.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\execution\\\\stock_exit_manager.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\execution\\\\options_exit_manager.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\models\\\\nbeats_model.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\models\\\\lgbm_model.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\reports\\\\report_generator.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\tax\\\\wash_sale_tracker.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\core\\\\backup_manager.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\core\\\\events.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\backtest\\\\engine.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\backtest\\\\metrics.py\" \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\backtest\\\\reports.py\")",
+      "Bash(done)",
+      "Bash(for:*)",
+      "Bash(wc:*)",
+      "Bash(dir /R \"C:\\\\Users\\\\corin\\\\Desktop\\\\LEVIATHANV2\\\\leviathan\\\\crypto\"\")",
+      "WebFetch(domain:alpaca.markets)",
+      "WebFetch(domain:docs.alpaca.markets)",
+      "Bash(gh auth:*)",
+      "Bash(winget install:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(tr:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEVIATHAN - Crypto Trading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: {
+            'bg-primary': '#0a0a0f', 'bg-secondary': '#12121a', 'bg-tertiary': '#1a1a24',
+            'bg-quaternary': '#22222e', 'accent-purple': '#8b5cf6', 'accent-cyan': '#06b6d4', 'border-color': '#2d2d3a',
+        }}}}
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2d2d3a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+        main { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .gradient-text { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: rgba(18, 18, 26, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(45, 45, 58, 0.6); border-radius: 16px; transition: all 0.25s ease; }
+        .glass-card:hover { border-color: rgba(139, 92, 246, 0.3); }
+        .input-field { background: #22222e; border: 1px solid #2d2d3a; border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 14px; width: 100%; transition: border-color 0.2s; }
+        .input-field:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+        .nav-btn { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: #6b7280; transition: all 0.2s ease; border: none; background: transparent; cursor: pointer; position: relative; }
+        .nav-btn:hover { background: rgba(26, 26, 36, 0.8); color: #ffffff; }
+        .nav-btn.active { background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.08)); color: #8b5cf6; }
+        .nav-btn.active::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; background: linear-gradient(180deg, #8b5cf6, #06b6d4); border-radius: 0 2px 2px 0; }
+        .nav-tooltip { position: absolute; left: 60px; background: #22222e; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 50; border: 1px solid #2d2d3a; }
+        .nav-btn:hover .nav-tooltip { opacity: 1; }
+        .titlebar { height: 36px; background: #0a0a0f; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; user-select: none; -webkit-app-region: drag; border-bottom: 1px solid transparent; background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 100%); }
+        .titlebar-title { font-size: 12px; color: #6b7280; padding-left: 12px; font-weight: 500; }
+        .titlebar-buttons { display: flex; gap: 8px; -webkit-app-region: no-drag; align-items: center; padding-right: 4px; }
+        .titlebar-btn { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all 0.2s ease; position: relative; }
+        .titlebar-btn svg { opacity: 0; transition: opacity 0.15s; width: 8px; height: 8px; }
+        .titlebar-buttons:hover .titlebar-btn svg { opacity: 1; }
+        .btn-minimize { background: #f5bf4f; } .btn-minimize:hover { box-shadow: 0 0 8px #f5bf4f88; transform: scale(1.15); } .btn-minimize svg { color: #7a5a00; }
+        .btn-maximize { background: #3dc84b; } .btn-maximize:hover { box-shadow: 0 0 8px #3dc84b88; transform: scale(1.15); } .btn-maximize svg { color: #1a5e20; }
+        .btn-close { background: #ed6a5e; } .btn-close:hover { box-shadow: 0 0 8px #ed6a5e88; transform: scale(1.15); } .btn-close svg { color: #7a1b14; }
+        .glow-btn { position: relative; overflow: hidden; }
+        .glow-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%); transform: translateX(-100%); transition: transform 0.6s; }
+        .glow-btn:hover::after { transform: translateX(100%); }
+        .swap-arrow { transition: transform 0.3s; }
+        .swap-arrow:hover { transform: rotate(180deg); }
+        .tab-btn { padding: 8px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .tab-btn.active { background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.1)); color: #8b5cf6; }
+        .tab-btn:not(.active) { background: transparent; color: #6b7280; }
+        .tab-btn:not(.active):hover { background: #1a1a24; color: #fff; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .holding-row { transition: all 0.2s; border-radius: 12px; }
+        .holding-row:hover { background: rgba(26, 26, 36, 0.6); }
+        .signal-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .signal-long { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .signal-short { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .signal-neutral { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+        @keyframes pulse-cyan { 0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); } 50% { box-shadow: 0 0 0 6px rgba(6, 182, 212, 0); } }
+        .pulse-crypto { animation: pulse-cyan 2s infinite; }
+    </style>
+</head>
+<body class="bg-bg-primary min-h-screen">
+    <div class="titlebar pywebview-drag-region"><span class="titlebar-title">LEVIATHAN V2</span><div class="titlebar-buttons"><button class="titlebar-btn btn-minimize" onclick="pywebview.api.minimize_window()" title="Minimize"><svg viewBox="0 0 12 12"><rect fill="currentColor" x="2" y="5.5" width="8" height="1.5" rx="0.5"/></svg></button><button class="titlebar-btn btn-maximize" onclick="pywebview.api.maximize_window()" title="Maximize"><svg viewBox="0 0 12 12"><path fill="currentColor" d="M2 3.5C2 2.67 2.67 2 3.5 2h5c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5h-5A1.5 1.5 0 012 8.5v-5zm1.5-.5a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5h-5z"/></svg></button><button class="titlebar-btn btn-close" onclick="pywebview.api.close_window()" title="Close"><svg viewBox="0 0 12 12"><path fill="currentColor" d="M3.17 2.46L6 5.3l2.83-2.83.7.7L6.71 6l2.83 2.83-.71.7L6 6.71 3.17 9.54l-.71-.71L5.29 6 2.46 3.17z"/></svg></button></div></div>
+    <div class="flex" style="height: calc(100vh - 36px);">
+        <aside class="w-[72px] bg-bg-secondary/50 backdrop-blur-xl border-r border-border-color/50 flex flex-col items-center py-5" style="z-index: 50;">
+            <div class="mb-6"><div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center shadow-lg shadow-accent-purple/20"><span class="text-lg font-bold">L</span></div></div>
+            <nav class="flex flex-col gap-2 flex-1">
+                <button onclick="showPage('dashboard')" class="nav-btn"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="nav-tooltip">Dashboard</span></button>
+                <button onclick="showPage('analytics')" class="nav-btn"><i data-lucide="bar-chart-3" class="w-5 h-5"></i><span class="nav-tooltip">Analytics</span></button>
+                <button onclick="showPage('crypto')" class="nav-btn active"><i data-lucide="bitcoin" class="w-5 h-5"></i><span class="nav-tooltip">Crypto</span></button>
+                <button onclick="showPage('options')" class="nav-btn"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="nav-tooltip">Options</span></button>
+                <button onclick="showPage('training')" class="nav-btn"><i data-lucide="brain" class="w-5 h-5"></i><span class="nav-tooltip">Training</span></button>
+            </nav>
+            <button onclick="showPage('settings')" class="nav-btn"><i data-lucide="settings" class="w-5 h-5"></i><span class="nav-tooltip">Settings</span></button>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-6">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <h1 class="text-2xl font-bold gradient-text">Crypto Trading</h1>
+                    <p class="text-gray-500 text-sm">24/7 AI-Powered • 25 Supported Assets</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="crypto-status" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-secondary/60 backdrop-blur border border-border-color/50">
+                        <span id="crypto-dot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+                        <span id="crypto-status-text" class="text-sm font-medium text-gray-400">AI IDLE</span>
+                    </div>
+                    <button id="crypto-start-btn" onclick="toggleCryptoTrading()" class="glow-btn px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-cyan-500/20">
+                        Start AI Trading
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-5 bg-bg-secondary/40 p-1 rounded-xl w-fit">
+                <button class="tab-btn active" onclick="switchTab('portfolio')">Portfolio</button>
+                <button class="tab-btn" onclick="switchTab('opportunities')">AI Signals</button>
+                <button class="tab-btn" onclick="switchTab('swap')">Swap</button>
+                <button class="tab-btn" onclick="switchTab('rebalance')">Rebalance</button>
+            </div>
+
+            <!-- TAB: Portfolio -->
+            <div id="tab-portfolio" class="tab-panel active">
+                <!-- Portfolio Summary -->
+                <div class="grid grid-cols-4 gap-4 mb-5">
+                    <div class="glass-card p-4">
+                        <p class="text-gray-500 text-xs uppercase mb-1">Total Crypto Value</p>
+                        <p id="crypto-total" class="text-2xl font-bold">$0.00</p>
+                    </div>
+                    <div class="glass-card p-4">
+                        <p class="text-gray-500 text-xs uppercase mb-1">Holdings</p>
+                        <p id="crypto-count" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="glass-card p-4">
+                        <p class="text-gray-500 text-xs uppercase mb-1">Total P&L</p>
+                        <p id="crypto-pnl" class="text-2xl font-bold text-green-400">$0.00</p>
+                    </div>
+                    <div class="glass-card p-4">
+                        <p class="text-gray-500 text-xs uppercase mb-1">AI Signals Found</p>
+                        <p id="crypto-signals" class="text-2xl font-bold text-accent-cyan">0</p>
+                    </div>
+                </div>
+
+                <!-- Holdings Table -->
+                <div class="glass-card p-5 mb-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-accent-purple"></i> Your Holdings</h3>
+                        <button onclick="refreshHoldings()" class="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+                    </div>
+                    <div id="holdings-list" class="space-y-1">
+                        <div class="text-gray-500 text-sm text-center py-6">No crypto holdings yet</div>
+                    </div>
+                </div>
+
+                <!-- Quick Buy/Sell -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass-card p-5">
+                        <h3 class="text-base font-semibold mb-3 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-green-400"></i> Quick Buy</h3>
+                        <div class="flex gap-2 mb-3">
+                            <select id="buy-symbol" class="input-field flex-1">
+                                <option>BTC</option><option>ETH</option><option>SOL</option><option>DOGE</option><option>XRP</option>
+                                <option>AVAX</option><option>DOT</option><option>LINK</option><option>UNI</option><option>AAVE</option>
+                                <option>LTC</option><option>BCH</option><option>SHIB</option><option>PEPE</option><option>XTZ</option>
+                                <option>BAT</option><option>CRV</option><option>GRT</option><option>SUSHI</option><option>YFI</option>
+                                <option>SKY</option><option>TRUMP</option>
+                            </select>
+                            <input type="number" id="buy-amount" class="input-field flex-1" placeholder="$ Amount" step="1" min="1">
+                        </div>
+                        <button onclick="quickBuy()" class="glow-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-green-500/20">Buy</button>
+                    </div>
+                    <div class="glass-card p-5">
+                        <h3 class="text-base font-semibold mb-3 flex items-center gap-2"><i data-lucide="minus-circle" class="w-4 h-4 text-red-400"></i> Quick Sell</h3>
+                        <div class="flex gap-2 mb-3">
+                            <select id="sell-symbol" class="input-field flex-1">
+                                <option>BTC</option><option>ETH</option><option>SOL</option><option>DOGE</option><option>XRP</option>
+                                <option>AVAX</option><option>DOT</option><option>LINK</option><option>UNI</option><option>AAVE</option>
+                                <option>LTC</option><option>BCH</option><option>SHIB</option><option>PEPE</option><option>XTZ</option>
+                                <option>BAT</option><option>CRV</option><option>GRT</option><option>SUSHI</option><option>YFI</option>
+                                <option>SKY</option><option>TRUMP</option>
+                            </select>
+                            <input type="number" id="sell-qty" class="input-field flex-1" placeholder="Quantity" step="any">
+                        </div>
+                        <button onclick="quickSell()" class="glow-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-red-500/20">Sell</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: AI Signals -->
+            <div id="tab-opportunities" class="tab-panel">
+                <div class="glass-card p-5 mb-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="radar" class="w-5 h-5 text-accent-cyan"></i> AI Opportunity Scanner</h3>
+                        <button onclick="scanOpportunities()" class="glow-btn px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-purple-500/20">
+                            <span class="flex items-center gap-1"><i data-lucide="scan" class="w-4 h-4"></i> Scan Now</span>
+                        </button>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-4">Scans 22 cryptocurrencies using 7-period RSI, 8/21/5 MACD, and volume analysis. Signals above 0.6 strength are shown.</p>
+                    <div id="opportunities-list" class="space-y-2">
+                        <div class="text-gray-500 text-sm text-center py-6">Click "Scan Now" to find opportunities</div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="cpu" class="w-5 h-5 text-accent-purple"></i> Strategy Info</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl bg-bg-tertiary">
+                            <p class="font-semibold text-sm mb-2 flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Momentum Strategy</p>
+                            <p class="text-xs text-gray-400 leading-relaxed">Uses 7-period RSI (faster than stocks) with 8/21/5 MACD. Buys at RSI &lt; 25 (oversold), sells at RSI &gt; 75 (overbought). MACD crossover adds confirmation.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-bg-tertiary">
+                            <p class="font-semibold text-sm mb-2 flex items-center gap-2"><i data-lucide="repeat" class="w-4 h-4 text-blue-400"></i> Mean Reversion</p>
+                            <p class="text-xs text-gray-400 leading-relaxed">Bollinger Bands (20-period, 2.5 std) with higher volatility tolerance. Buys at lower band, sells at upper band. Ideal for ranging crypto markets.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Swap -->
+            <div id="tab-swap" class="tab-panel">
+                <div class="max-w-lg mx-auto">
+                    <div class="glass-card p-6 mb-4">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="arrow-left-right" class="w-5 h-5 text-accent-cyan"></i> Multi-Hop Swap</h3>
+                        <p class="text-xs text-gray-400 mb-4">Finds the optimal path between any two cryptos using BFS pathfinding across 60+ trading pairs. Max 3 hops.</p>
+                        <label class="text-sm text-gray-400 block mb-2">From</label>
+                        <div class="flex gap-3 mb-4">
+                            <select id="from-crypto" class="input-field flex-1">
+                                <option>BTC</option><option>ETH</option><option>SOL</option><option>DOGE</option><option>XRP</option>
+                                <option>AVAX</option><option>DOT</option><option>LINK</option><option>UNI</option><option>AAVE</option>
+                                <option>LTC</option><option>BCH</option><option>SHIB</option><option>PEPE</option><option>XTZ</option>
+                                <option>BAT</option><option>CRV</option><option>GRT</option><option>SUSHI</option><option>YFI</option>
+                                <option>SKY</option><option>TRUMP</option>
+                                <option>USD</option><option>USDC</option><option>USDT</option><option>USDG</option>
+                            </select>
+                            <input type="number" id="swap-amount" class="input-field flex-1" placeholder="Amount" step="any">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mb-4">
+                        <button onclick="swapDirection()" class="swap-arrow w-10 h-10 rounded-full bg-bg-tertiary border border-border-color flex items-center justify-center hover:bg-bg-quaternary hover:border-accent-purple/50">
+                            <i data-lucide="arrow-down-up" class="w-5 h-5 text-accent-purple"></i>
+                        </button>
+                    </div>
+
+                    <div class="glass-card p-6 mb-5">
+                        <label class="text-sm text-gray-400 block mb-2">To</label>
+                        <select id="to-crypto" class="input-field">
+                            <option>ETH</option><option>BTC</option><option>SOL</option><option>DOGE</option><option>XRP</option>
+                            <option>AVAX</option><option>DOT</option><option>LINK</option><option>UNI</option><option>AAVE</option>
+                            <option>LTC</option><option>BCH</option><option>SHIB</option><option>PEPE</option><option>XTZ</option>
+                            <option>BAT</option><option>CRV</option><option>GRT</option><option>SUSHI</option><option>YFI</option>
+                            <option>SKY</option><option>TRUMP</option>
+                            <option>USD</option><option>USDC</option><option>USDT</option><option>USDG</option>
+                        </select>
+                    </div>
+
+                    <button onclick="findPath()" class="glow-btn w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold mb-4 hover:-translate-y-0.5 transition-all shadow-lg shadow-cyan-500/20">
+                        Find Optimal Path
+                    </button>
+
+                    <div id="swap-result" class="glass-card p-6 hidden">
+                        <h3 class="text-base font-semibold mb-3">Optimal Route</h3>
+                        <div id="swap-path" class="text-sm text-gray-300 mb-3 font-mono bg-bg-tertiary p-3 rounded-lg"></div>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div><span class="text-xs text-gray-500">Estimated Output</span><p id="estimated-output" class="font-bold text-green-400"></p></div>
+                            <div><span class="text-xs text-gray-500">Total Fees</span><p id="total-fees" class="font-bold text-yellow-400"></p></div>
+                            <div><span class="text-xs text-gray-500">Hops</span><p id="num-hops" class="font-bold"></p></div>
+                            <div><span class="text-xs text-gray-500">Efficiency</span><p id="efficiency" class="font-bold"></p></div>
+                        </div>
+                        <button onclick="executeSwap()" class="glow-btn w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-green-500/20">
+                            Execute Swap
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Rebalance -->
+            <div id="tab-rebalance" class="tab-panel">
+                <div class="grid grid-cols-2 gap-5">
+                    <div class="glass-card p-5">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pie-chart" class="w-5 h-5 text-accent-purple"></i> Target Allocation</h3>
+                        <p class="text-xs text-gray-400 mb-4">Set your desired portfolio percentages. The system will sell overweight positions first, then buy underweight ones via optimal swap paths.</p>
+                        <div class="space-y-3" id="allocation-inputs">
+                            <div class="flex gap-2 items-center">
+                                <span class="text-sm font-medium w-14 text-orange-400">BTC</span>
+                                <input type="number" class="input-field alloc-input" data-crypto="BTC" value="40" min="0" max="100" step="5">
+                                <span class="text-xs text-gray-500">%</span>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-sm font-medium w-14 text-blue-400">ETH</span>
+                                <input type="number" class="input-field alloc-input" data-crypto="ETH" value="30" min="0" max="100" step="5">
+                                <span class="text-xs text-gray-500">%</span>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-sm font-medium w-14 text-purple-400">SOL</span>
+                                <input type="number" class="input-field alloc-input" data-crypto="SOL" value="15" min="0" max="100" step="5">
+                                <span class="text-xs text-gray-500">%</span>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-sm font-medium w-14 text-cyan-400">LINK</span>
+                                <input type="number" class="input-field alloc-input" data-crypto="LINK" value="15" min="0" max="100" step="5">
+                                <span class="text-xs text-gray-500">%</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <button onclick="addAllocation()" class="text-xs text-accent-purple hover:text-white transition-colors flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Add Asset</button>
+                        </div>
+                        <p id="alloc-total" class="text-xs text-gray-400 mt-3">Total: 100%</p>
+                        <button onclick="executeRebalance()" class="glow-btn w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold mt-4 hover:-translate-y-0.5 transition-all shadow-lg shadow-purple-500/20">
+                            Rebalance Portfolio
+                        </button>
+                    </div>
+
+                    <div class="glass-card p-5">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-accent-cyan"></i> Current vs Target</h3>
+                        <div id="rebalance-comparison" class="space-y-3">
+                            <div class="text-gray-500 text-sm text-center py-6">Load holdings to see comparison</div>
+                        </div>
+                        <div class="mt-4 p-3 rounded-xl bg-bg-tertiary">
+                            <h4 class="text-sm font-semibold mb-2">Preset Strategies</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="setPreset('conservative')" class="py-2 px-3 rounded-lg bg-bg-quaternary hover:bg-border-color text-xs font-medium transition-colors">Conservative<br><span class="text-gray-500">60/30/10</span></button>
+                                <button onclick="setPreset('balanced')" class="py-2 px-3 rounded-lg bg-bg-quaternary hover:bg-border-color text-xs font-medium transition-colors">Balanced<br><span class="text-gray-500">40/30/15/15</span></button>
+                                <button onclick="setPreset('aggressive')" class="py-2 px-3 rounded-lg bg-bg-quaternary hover:bg-border-color text-xs font-medium transition-colors">Aggressive<br><span class="text-gray-500">25/25/25/25</span></button>
+                                <button onclick="setPreset('btc_maxi')" class="py-2 px-3 rounded-lg bg-bg-quaternary hover:bg-border-color text-xs font-medium transition-colors">BTC Maxi<br><span class="text-gray-500">80/15/5</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supported Assets (always visible) -->
+            <div class="glass-card p-4 mt-5">
+                <div class="flex items-center gap-2 mb-2">
+                    <i data-lucide="coins" class="w-4 h-4 text-accent-cyan"></i>
+                    <span class="text-xs font-semibold text-gray-400 uppercase">Supported Assets (Alpaca)</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-400 text-xs font-medium">BTC</span>
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium">ETH</span>
+                    <span class="px-2 py-1 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium">SOL</span>
+                    <span class="px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 text-xs font-medium">DOGE</span>
+                    <span class="px-2 py-1 rounded-lg bg-gray-500/10 text-gray-300 text-xs font-medium">XRP</span>
+                    <span class="px-2 py-1 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium">AVAX</span>
+                    <span class="px-2 py-1 rounded-lg bg-pink-500/10 text-pink-400 text-xs font-medium">DOT</span>
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300 text-xs font-medium">LINK</span>
+                    <span class="px-2 py-1 rounded-lg bg-pink-500/10 text-pink-300 text-xs font-medium">UNI</span>
+                    <span class="px-2 py-1 rounded-lg bg-purple-500/10 text-purple-300 text-xs font-medium">AAVE</span>
+                    <span class="px-2 py-1 rounded-lg bg-gray-500/10 text-gray-300 text-xs font-medium">LTC</span>
+                    <span class="px-2 py-1 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium">BCH</span>
+                    <span class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-300 text-xs font-medium">SHIB</span>
+                    <span class="px-2 py-1 rounded-lg bg-green-500/10 text-green-300 text-xs font-medium">PEPE</span>
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300 text-xs font-medium">XTZ</span>
+                    <span class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-300 text-xs font-medium">BAT</span>
+                    <span class="px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-300 text-xs font-medium">CRV</span>
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300 text-xs font-medium">GRT</span>
+                    <span class="px-2 py-1 rounded-lg bg-pink-500/10 text-pink-300 text-xs font-medium">SUSHI</span>
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium">YFI</span>
+                    <span class="px-2 py-1 rounded-lg bg-gray-500/10 text-gray-300 text-xs font-medium">SKY</span>
+                    <span class="px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 text-xs font-medium">TRUMP</span>
+                    <span class="px-2 py-1 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium">USDC</span>
+                    <span class="px-2 py-1 rounded-lg bg-green-500/10 text-green-300 text-xs font-medium">USDT</span>
+                    <span class="px-2 py-1 rounded-lg bg-green-500/10 text-green-300 text-xs font-medium">USDG</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        async function callPython(method, ...args) {
+            try { if (!window.pywebview || !window.pywebview.api) return null; const r = await window.pywebview.api[method](...args); return typeof r === 'string' ? JSON.parse(r) : r; }
+            catch(e) { console.error(e); return null; }
+        }
+
+        let cryptoRunning = false;
+
+        // ── Tabs ──
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ── AI Trading ──
+        async function toggleCryptoTrading() {
+            if (cryptoRunning) {
+                await callPython('stop_crypto_trading');
+                cryptoRunning = false;
+                document.getElementById('crypto-dot').className = 'w-2 h-2 rounded-full bg-gray-500';
+                document.getElementById('crypto-status-text').textContent = 'AI IDLE';
+                document.getElementById('crypto-status-text').className = 'text-sm font-medium text-gray-400';
+                document.getElementById('crypto-start-btn').textContent = 'Start AI Trading';
+                document.getElementById('crypto-start-btn').className = 'glow-btn px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-cyan-500/20';
+            } else {
+                await callPython('start_crypto_trading');
+                cryptoRunning = true;
+                document.getElementById('crypto-dot').className = 'w-2 h-2 rounded-full bg-cyan-400 pulse-crypto';
+                document.getElementById('crypto-status-text').textContent = 'AI ACTIVE';
+                document.getElementById('crypto-status-text').className = 'text-sm font-medium text-cyan-400';
+                document.getElementById('crypto-start-btn').textContent = 'Stop AI Trading';
+                document.getElementById('crypto-start-btn').className = 'glow-btn px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-red-500/20';
+            }
+        }
+
+        // ── Holdings ──
+        async function refreshHoldings() {
+            const data = await callPython('get_crypto_holdings');
+            if (!data) return;
+            document.getElementById('crypto-total').textContent = '$' + (data.total_value || 0).toFixed(2);
+            document.getElementById('crypto-count').textContent = data.count || 0;
+            const totalPnl = (data.holdings || []).reduce((s, h) => s + h.pnl, 0);
+            const pnlEl = document.getElementById('crypto-pnl');
+            pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
+            pnlEl.className = 'text-2xl font-bold ' + (totalPnl >= 0 ? 'text-green-400' : 'text-red-400');
+
+            const list = document.getElementById('holdings-list');
+            if (!data.holdings || data.holdings.length === 0) {
+                list.innerHTML = '<div class="text-gray-500 text-sm text-center py-6">No crypto holdings yet</div>';
+                return;
+            }
+            list.innerHTML = data.holdings.map(h => `
+                <div class="holding-row flex items-center justify-between p-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
+                            <span class="text-xs font-bold text-accent-cyan">${h.symbol.slice(0,3)}</span>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm">${h.symbol}</p>
+                            <p class="text-xs text-gray-500">${h.qty} units</p>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">${h.allocation.toFixed(1)}%</p>
+                        <div class="w-16 h-1.5 rounded-full bg-bg-quaternary mt-1"><div class="h-1.5 rounded-full bg-accent-purple" style="width:${Math.min(h.allocation, 100)}%"></div></div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium text-sm">$${h.value.toFixed(2)}</p>
+                        <p class="text-xs ${h.pnl >= 0 ? 'text-green-400' : 'text-red-400'}">${h.pnl >= 0 ? '+' : ''}${h.pnl_pct.toFixed(2)}%</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ── Quick Buy/Sell ──
+        async function quickBuy() {
+            const sym = document.getElementById('buy-symbol').value;
+            const amt = parseFloat(document.getElementById('buy-amount').value);
+            if (!amt || amt < 1) return;
+            await callPython('buy_crypto', sym, amt);
+            setTimeout(refreshHoldings, 2000);
+        }
+        async function quickSell() {
+            const sym = document.getElementById('sell-symbol').value;
+            const qty = parseFloat(document.getElementById('sell-qty').value);
+            if (!qty) return;
+            await callPython('sell_crypto', sym, qty);
+            setTimeout(refreshHoldings, 2000);
+        }
+
+        // ── Opportunities ──
+        async function scanOpportunities() {
+            const list = document.getElementById('opportunities-list');
+            list.innerHTML = '<div class="text-accent-cyan text-sm text-center py-6">Scanning 22 cryptocurrencies...</div>';
+            const data = await callPython('get_crypto_opportunities');
+            document.getElementById('crypto-signals').textContent = data ? data.count : 0;
+            if (!data || !data.opportunities || data.opportunities.length === 0) {
+                list.innerHTML = '<div class="text-gray-500 text-sm text-center py-6">No strong signals found right now</div>';
+                return;
+            }
+            list.innerHTML = data.opportunities.map(o => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-bg-tertiary">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
+                            <span class="text-xs font-bold text-accent-cyan">${o.symbol.split('/')[0].slice(0,3)}</span>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm">${o.symbol}</p>
+                            <span class="signal-badge signal-${o.direction}">${o.direction.toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">RSI</p>
+                        <p class="font-mono text-sm ${o.rsi < 30 ? 'text-green-400' : o.rsi > 70 ? 'text-red-400' : ''}">${o.rsi.toFixed(1)}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">Volume</p>
+                        <p class="font-mono text-sm">${o.volume_ratio.toFixed(1)}x</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">Strength</p>
+                        <div class="flex items-center gap-1">
+                            <div class="w-16 h-1.5 rounded-full bg-bg-quaternary"><div class="h-1.5 rounded-full ${o.strength >= 0.8 ? 'bg-green-400' : 'bg-yellow-400'}" style="width:${o.strength * 100}%"></div></div>
+                            <span class="font-mono text-xs">${o.strength.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ── Swap ──
+        function swapDirection() {
+            const f = document.getElementById('from-crypto'), t = document.getElementById('to-crypto');
+            [f.value, t.value] = [t.value, f.value];
+        }
+        async function findPath() {
+            const from = document.getElementById('from-crypto').value;
+            const to = document.getElementById('to-crypto').value;
+            const amount = parseFloat(document.getElementById('swap-amount').value);
+            if (!amount) return;
+            const result = await callPython('find_swap_path', from, to, amount);
+            if (result && result.path && !result.path.error) {
+                const p = result.path.optimal_path || result.path;
+                document.getElementById('swap-path').textContent = p.path_string || '';
+                document.getElementById('estimated-output').textContent = (p.estimated_output || 0).toFixed(6);
+                document.getElementById('total-fees').textContent = '$' + (p.total_fees_usd || 0).toFixed(4);
+                document.getElementById('num-hops').textContent = p.num_hops || 0;
+                document.getElementById('efficiency').textContent = ((p.efficiency || 0) * 100).toFixed(2) + '%';
+                document.getElementById('swap-result').classList.remove('hidden');
+            }
+        }
+        async function executeSwap() {
+            const from = document.getElementById('from-crypto').value;
+            const to = document.getElementById('to-crypto').value;
+            const amount = parseFloat(document.getElementById('swap-amount').value);
+            await callPython('execute_swap', from, to, amount);
+            document.getElementById('swap-result').classList.add('hidden');
+            setTimeout(refreshHoldings, 3000);
+        }
+
+        // ── Rebalance ──
+        function updateAllocTotal() {
+            const inputs = document.querySelectorAll('.alloc-input');
+            let total = 0;
+            inputs.forEach(i => total += parseFloat(i.value) || 0);
+            document.getElementById('alloc-total').textContent = 'Total: ' + total + '%';
+            document.getElementById('alloc-total').className = 'text-xs mt-3 ' + (total === 100 ? 'text-green-400' : 'text-red-400');
+        }
+        document.addEventListener('input', e => { if (e.target.classList.contains('alloc-input')) updateAllocTotal(); });
+
+        function addAllocation() {
+            const container = document.getElementById('allocation-inputs');
+            const cryptos = ['AVAX','DOT','UNI','AAVE','BCH','XRP','DOGE','SHIB','PEPE','BAT','CRV','GRT','SUSHI','YFI','XTZ','SKY','TRUMP','LTC'];
+            const existing = [...document.querySelectorAll('.alloc-input')].map(i => i.dataset.crypto);
+            const available = cryptos.filter(c => !existing.includes(c));
+            if (available.length === 0) return;
+            const crypto = available[0];
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 items-center';
+            div.innerHTML = `<span class="text-sm font-medium w-14 text-gray-300">${crypto}</span><input type="number" class="input-field alloc-input" data-crypto="${crypto}" value="0" min="0" max="100" step="5"><span class="text-xs text-gray-500">%</span>`;
+            container.appendChild(div);
+        }
+
+        async function executeRebalance() {
+            const inputs = document.querySelectorAll('.alloc-input');
+            const allocations = {};
+            inputs.forEach(i => {
+                const val = parseFloat(i.value);
+                if (val > 0) allocations[i.dataset.crypto] = val / 100;
+            });
+            await callPython('rebalance_crypto', JSON.stringify(allocations));
+            setTimeout(refreshHoldings, 3000);
+        }
+
+        function setPreset(name) {
+            const presets = {
+                conservative: { BTC: 60, ETH: 30, SOL: 10 },
+                balanced: { BTC: 40, ETH: 30, SOL: 15, LINK: 15 },
+                aggressive: { BTC: 25, ETH: 25, SOL: 25, LINK: 25 },
+                btc_maxi: { BTC: 80, ETH: 15, SOL: 5 },
+            };
+            const p = presets[name];
+            if (!p) return;
+            document.querySelectorAll('.alloc-input').forEach(i => i.value = p[i.dataset.crypto] || 0);
+            updateAllocTotal();
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', () => { refreshHoldings(); });
+        lucide.createIcons();
+    </script>
+    <script src="js/resize.js"></script>
+</body>
+</html>

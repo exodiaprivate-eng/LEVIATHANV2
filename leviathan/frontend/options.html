@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEVIATHAN - Options Trading</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: {
+            'bg-primary': '#0a0a0f', 'bg-secondary': '#12121a', 'bg-tertiary': '#1a1a24',
+            'bg-quaternary': '#22222e', 'accent-purple': '#8b5cf6', 'accent-cyan': '#06b6d4', 'border-color': '#2d2d3a',
+        }}}}
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2d2d3a; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+        main { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .gradient-text { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: rgba(18, 18, 26, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(45, 45, 58, 0.6); border-radius: 16px; transition: all 0.25s ease; }
+        .glass-card:hover { border-color: rgba(139, 92, 246, 0.3); }
+        .input-field { background: #22222e; border: 1px solid #2d2d3a; border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 14px; width: 100%; transition: border-color 0.2s; }
+        .input-field:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+        .nav-btn { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: #6b7280; transition: all 0.2s ease; border: none; background: transparent; cursor: pointer; position: relative; }
+        .nav-btn:hover { background: rgba(26, 26, 36, 0.8); color: #ffffff; }
+        .nav-btn.active { background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.08)); color: #8b5cf6; }
+        .nav-btn.active::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; background: linear-gradient(180deg, #8b5cf6, #06b6d4); border-radius: 0 2px 2px 0; }
+        .nav-tooltip { position: absolute; left: 60px; background: #22222e; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 50; border: 1px solid #2d2d3a; }
+        .nav-btn:hover .nav-tooltip { opacity: 1; }
+        .titlebar { height: 36px; background: #0a0a0f; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; user-select: none; -webkit-app-region: drag; border-bottom: 1px solid transparent; background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 100%); }
+        .titlebar-title { font-size: 12px; color: #6b7280; padding-left: 12px; font-weight: 500; }
+        .titlebar-buttons { display: flex; gap: 8px; -webkit-app-region: no-drag; align-items: center; padding-right: 4px; }
+        .titlebar-btn { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all 0.2s ease; position: relative; }
+        .titlebar-btn svg { opacity: 0; transition: opacity 0.15s; width: 8px; height: 8px; }
+        .titlebar-buttons:hover .titlebar-btn svg { opacity: 1; }
+        .btn-minimize { background: #f5bf4f; } .btn-minimize:hover { box-shadow: 0 0 8px #f5bf4f88; transform: scale(1.15); } .btn-minimize svg { color: #7a5a00; }
+        .btn-maximize { background: #3dc84b; } .btn-maximize:hover { box-shadow: 0 0 8px #3dc84b88; transform: scale(1.15); } .btn-maximize svg { color: #1a5e20; }
+        .btn-close { background: #ed6a5e; } .btn-close:hover { box-shadow: 0 0 8px #ed6a5e88; transform: scale(1.15); } .btn-close svg { color: #7a1b14; }
+        .glow-btn { position: relative; overflow: hidden; }
+        .glow-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%); transform: translateX(-100%); transition: transform 0.6s; }
+        .glow-btn:hover::after { transform: translateX(100%); }
+        .spread-card { cursor: pointer; }
+        .spread-card:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, 0.5); }
+    </style>
+</head>
+<body class="bg-bg-primary min-h-screen">
+    <div class="titlebar pywebview-drag-region"><span class="titlebar-title">LEVIATHAN V2</span><div class="titlebar-buttons"><button class="titlebar-btn btn-minimize" onclick="pywebview.api.minimize_window()" title="Minimize"><svg viewBox="0 0 12 12"><rect fill="currentColor" x="2" y="5.5" width="8" height="1.5" rx="0.5"/></svg></button><button class="titlebar-btn btn-maximize" onclick="pywebview.api.maximize_window()" title="Maximize"><svg viewBox="0 0 12 12"><path fill="currentColor" d="M2 3.5C2 2.67 2.67 2 3.5 2h5c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5h-5A1.5 1.5 0 012 8.5v-5zm1.5-.5a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5h-5z"/></svg></button><button class="titlebar-btn btn-close" onclick="pywebview.api.close_window()" title="Close"><svg viewBox="0 0 12 12"><path fill="currentColor" d="M3.17 2.46L6 5.3l2.83-2.83.7.7L6.71 6l2.83 2.83-.71.7L6 6.71 3.17 9.54l-.71-.71L5.29 6 2.46 3.17z"/></svg></button></div></div>
+    <div class="flex" style="height: calc(100vh - 36px);">
+        <aside class="w-[72px] bg-bg-secondary/50 backdrop-blur-xl border-r border-border-color/50 flex flex-col items-center py-5" style="z-index: 50;">
+            <div class="mb-6"><div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center shadow-lg shadow-accent-purple/20"><span class="text-lg font-bold">L</span></div></div>
+            <nav class="flex flex-col gap-2 flex-1">
+                <button onclick="showPage('dashboard')" class="nav-btn"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="nav-tooltip">Dashboard</span></button>
+                <button onclick="showPage('analytics')" class="nav-btn"><i data-lucide="bar-chart-3" class="w-5 h-5"></i><span class="nav-tooltip">Analytics</span></button>
+                <button onclick="showPage('crypto')" class="nav-btn"><i data-lucide="bitcoin" class="w-5 h-5"></i><span class="nav-tooltip">Crypto</span></button>
+                <button onclick="showPage('options')" class="nav-btn active"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="nav-tooltip">Options</span></button>
+                <button onclick="showPage('training')" class="nav-btn"><i data-lucide="brain" class="w-5 h-5"></i><span class="nav-tooltip">Training</span></button>
+            </nav>
+            <button onclick="showPage('settings')" class="nav-btn"><i data-lucide="settings" class="w-5 h-5"></i><span class="nav-tooltip">Settings</span></button>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-8">
+            <h1 class="text-2xl font-bold gradient-text mb-6">Options Trading</h1>
+
+            <!-- Options Scanner -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="glass-card p-5">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-accent-purple"></i> Options Scanner</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-1">Symbol</label>
+                            <input type="text" id="opt-symbol" class="input-field" placeholder="e.g. AAPL, SPY" value="SPY">
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-1">Strategy</label>
+                            <select id="opt-strategy" class="input-field">
+                                <option value="covered_call">Covered Call</option>
+                                <option value="cash_secured_put">Cash-Secured Put</option>
+                                <option value="iron_condor">Iron Condor</option>
+                                <option value="vertical_spread">Vertical Spread</option>
+                                <option value="straddle">Straddle</option>
+                                <option value="strangle">Strangle</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-400 block mb-1">Expiry Range</label>
+                            <select id="opt-expiry" class="input-field">
+                                <option value="7">1 Week</option>
+                                <option value="14">2 Weeks</option>
+                                <option value="30" selected>30 Days</option>
+                                <option value="45">45 Days</option>
+                                <option value="60">60 Days</option>
+                            </select>
+                        </div>
+                        <button onclick="scanOptions()" class="glow-btn w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold hover:-translate-y-0.5 transition-all shadow-lg shadow-purple-500/20">
+                            Scan Options
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Greeks Display -->
+                <div class="glass-card p-5">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-accent-cyan"></i> Greeks Overview</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-bg-tertiary">
+                            <span class="text-gray-400 text-sm">Delta</span>
+                            <span id="greek-delta" class="font-mono font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-bg-tertiary">
+                            <span class="text-gray-400 text-sm">Gamma</span>
+                            <span id="greek-gamma" class="font-mono font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-bg-tertiary">
+                            <span class="text-gray-400 text-sm">Theta</span>
+                            <span id="greek-theta" class="font-mono font-bold text-red-400">--</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-bg-tertiary">
+                            <span class="text-gray-400 text-sm">Vega</span>
+                            <span id="greek-vega" class="font-mono font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-bg-tertiary">
+                            <span class="text-gray-400 text-sm">IV Rank</span>
+                            <span id="iv-rank" class="font-mono font-bold text-accent-purple">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Positions -->
+                <div class="glass-card p-5">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="layers" class="w-5 h-5 text-green-400"></i> Active Options</h3>
+                    <div id="active-options" class="space-y-3 max-h-80 overflow-y-auto">
+                        <div class="text-gray-500 text-sm text-center py-8">No active options positions</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spread Builder -->
+            <div class="glass-card p-5 mb-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="git-branch" class="w-5 h-5 text-accent-purple"></i> Spread Strategies</h3>
+                <div class="grid grid-cols-3 gap-4" id="spread-results">
+                    <div class="spread-card glass-card p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="shield" class="w-5 h-5 text-green-400"></i>
+                        </div>
+                        <p class="font-semibold mb-1">Covered Call</p>
+                        <p class="text-xs text-gray-400 mb-3">Sell calls against stock holdings for income</p>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Max Profit</span><span class="text-green-400">Limited</span>
+                        </div>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span class="text-gray-500">Max Risk</span><span class="text-yellow-400">Stock price</span>
+                        </div>
+                    </div>
+                    <div class="spread-card glass-card p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="arrow-down-circle" class="w-5 h-5 text-blue-400"></i>
+                        </div>
+                        <p class="font-semibold mb-1">Cash-Secured Put</p>
+                        <p class="text-xs text-gray-400 mb-3">Sell puts to buy stock at a discount</p>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Max Profit</span><span class="text-green-400">Premium</span>
+                        </div>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span class="text-gray-500">Max Risk</span><span class="text-yellow-400">Strike price</span>
+                        </div>
+                    </div>
+                    <div class="spread-card glass-card p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="maximize-2" class="w-5 h-5 text-purple-400"></i>
+                        </div>
+                        <p class="font-semibold mb-1">Iron Condor</p>
+                        <p class="text-xs text-gray-400 mb-3">Profit from low volatility within a range</p>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Max Profit</span><span class="text-green-400">Net credit</span>
+                        </div>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span class="text-gray-500">Max Risk</span><span class="text-yellow-400">Spread width</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Options Chain -->
+            <div class="glass-card p-5">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="table" class="w-5 h-5 text-accent-purple"></i> Options Chain</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead><tr class="text-gray-500 text-xs uppercase border-b border-border-color">
+                            <th class="py-3 text-left">Expiry</th>
+                            <th class="text-left">Strike</th>
+                            <th class="text-left">Type</th>
+                            <th class="text-right">Bid</th>
+                            <th class="text-right">Ask</th>
+                            <th class="text-right">Volume</th>
+                            <th class="text-right">OI</th>
+                            <th class="text-right">IV</th>
+                        </tr></thead>
+                        <tbody id="options-chain">
+                            <tr><td colspan="8" class="text-gray-500 text-sm text-center py-8">Run a scan to populate the options chain</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        async function callPython(method, ...args) {
+            try { const r = await window.pywebview.api[method](...args); return typeof r === 'string' ? JSON.parse(r) : r; }
+            catch(e) { console.error(e); return null; }
+        }
+        async function scanOptions() {
+            const symbol = document.getElementById('opt-symbol').value;
+            const strategy = document.getElementById('opt-strategy').value;
+            const expiry = document.getElementById('opt-expiry').value;
+            const result = await callPython('scan_options', symbol, strategy, expiry);
+            if (result && !result.error) {
+                // Update greeks if returned
+                if (result.greeks) {
+                    document.getElementById('greek-delta').textContent = result.greeks.delta?.toFixed(4) || '--';
+                    document.getElementById('greek-gamma').textContent = result.greeks.gamma?.toFixed(4) || '--';
+                    document.getElementById('greek-theta').textContent = result.greeks.theta?.toFixed(4) || '--';
+                    document.getElementById('greek-vega').textContent = result.greeks.vega?.toFixed(4) || '--';
+                    document.getElementById('iv-rank').textContent = result.iv_rank ? `${(result.iv_rank * 100).toFixed(0)}%` : '--';
+                }
+            }
+        }
+        lucide.createIcons();
+    </script>
+    <script src="js/resize.js"></script>
+</body>
+</html>
