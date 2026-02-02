@@ -16,7 +16,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(dir:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(python -c:*)",
+      "Bash(git push)",
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ]
   }
 }
